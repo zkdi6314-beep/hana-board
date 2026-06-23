@@ -1,0 +1,15 @@
+{
+  "name": "영업팀 데일리보드 모바일",
+  "short_name": "영업보드",
+  "description": "현장에서 견적요청 접수 + 보드 보기",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0891b2",
+  "theme_color": "#0891b2",
+  "icons": [
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" }
+  ]
+}
