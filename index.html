@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0891b2">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="영업보드">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>영업팀 데일리보드 · 모바일</title>
+<style>
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{ font-family:'Malgun Gothic','맑은 고딕',-apple-system,sans-serif; background:#f4f5f7; color:#222;
+        padding-bottom:env(safe-area-inset-bottom); -webkit-text-size-adjust:100%; }
+  .head{ background:#0891b2; color:#fff; padding:14px 16px calc(14px + env(safe-area-inset-top)); padding-top:calc(14px + env(safe-area-inset-top)); }
+  .head h1{ font-size:18px; font-weight:800; }
+  .head .sub{ font-size:12px; opacity:.9; margin-top:2px; }
+  .stat{ font-size:11.5px; opacity:.95; margin-top:6px; min-height:15px; }
+  /* 탭 */
+  .tabs{ display:flex; background:#fff; border-bottom:1px solid #e2e2e2; position:sticky; top:0; z-index:50; }
+  .tabs button{ flex:1; border:none; background:none; padding:13px 0; font-size:15px; font-weight:700; color:#888; border-bottom:3px solid transparent; }
+  .tabs button.on{ color:#0891b2; border-bottom-color:#0891b2; }
+  .wrap{ padding:14px; }
+  .hidden{ display:none !important; }
+  /* 접수 폼 */
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; color:#555; font-weight:700; margin-bottom:5px; }
+  .field input, .field select, .field textarea{ width:100%; padding:13px; font-size:16px; border:1px solid #ccc; border-radius:10px; background:#fff; font-family:inherit; }
+  .field textarea{ min-height:120px; resize:vertical; line-height:1.5; }
+  .submit{ width:100%; padding:16px; font-size:17px; font-weight:800; color:#fff; background:#0891b2; border:none; border-radius:12px; box-shadow:0 4px 12px rgba(8,145,178,.35); }
+  .submit:active{ background:#0a7c98; }
+  .submit:disabled{ opacity:.6; }
+  .formhint{ font-size:12px; color:#888; line-height:1.6; margin-top:14px; background:#fff; border:1px solid #eee; border-radius:10px; padding:12px; }
+  .msg{ font-size:13.5px; font-weight:700; text-align:center; min-height:20px; margin:12px 0 4px; }
+  .msg.ok{ color:#16a34a; } .msg.err{ color:#dc2626; }
+  /* 뷰어 */
+  .vbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
+  .vbar button{ border:none; border-radius:8px; padding:9px 13px; font-size:13px; font-weight:700; background:#2d6cdf; color:#fff; }
+  .vbar label{ font-size:12.5px; color:#555; display:flex; align-items:center; gap:5px; }
+  .col{ background:#fff; border-radius:12px; margin-bottom:14px; overflow:hidden; border:1px solid #e8e8e8; }
+  .col h2{ font-size:14.5px; padding:11px 14px; display:flex; justify-content:space-between; align-items:center; background:#eef1f5; }
+  .col h2 .cnt{ background:#fff; border-radius:12px; padding:2px 11px; font-size:13px; color:#555; font-weight:800; }
+  .col.c0 h2{ background:#fdecec; color:#c0392b; } .col.c0 h2 .cnt{ background:#c0392b; color:#fff; }
+  .col .body{ padding:10px 12px; }
+  .colsub{ font-size:11px; color:#999; margin:-2px 2px 8px; }
+  .card{ background:#fff; border:1px solid #eee; border-radius:10px; padding:11px 12px; margin-bottom:9px; box-shadow:0 1px 2px rgba(0,0,0,.06); border-left:4px solid #2d6cdf; }
+  .card.followup{ border-left-color:#f59e0b; background:#fff8ec; }
+  .card .cust{ font-weight:800; font-size:15px; margin-bottom:3px; }
+  .card .meta{ font-size:12.5px; color:#666; margin-bottom:2px; }
+  .card .items{ font-size:13px; color:#222; margin:5px 0; white-space:pre-wrap; line-height:1.45; }
+  .card .amt{ font-size:13px; font-weight:800; color:#16a34a; }
+  .tag{ display:inline-block; font-size:11px; background:#eef; color:#335; border-radius:5px; padding:2px 7px; margin-right:5px; }
+  .due{ font-size:12px; font-weight:800; } .due.f{ color:#d97706; } .due.g{ color:#999; }
+  .empty{ color:#aaa; font-size:12.5px; text-align:center; padding:14px 0; }
+  .panel{ background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:12px; margin-bottom:14px; }
+  .panel .ttl{ font-weight:800; font-size:14px; margin-bottom:8px; }
+  .itbl{ width:100%; border-collapse:collapse; font-size:12.5px; display:block; overflow-x:auto; }
+  .itbl tr{ display:table; width:100%; table-layout:fixed; }
+  .itbl th,.itbl td{ border:1px solid #ececec; padding:6px 8px; text-align:left; word-break:break-word; }
+  .itbl th{ background:#f1f4f9; }
+</style>
+</head>
+<body>
+
+<!-- ===== 접근 잠금 (영업팀 둘만 사용) ===== -->
+<div id="__lock" style="position:fixed;inset:0;z-index:99999;background:#1f2937;display:flex;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:30px 28px;width:280px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+    <div style="font-size:19px;font-weight:800;margin-bottom:4px">🔒 영업팀 전용</div>
+    <div style="font-size:12.5px;color:#777;margin-bottom:18px">접근 PIN을 입력하세요</div>
+    <input id="__pin" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN"
+      style="width:100%;padding:13px;font-size:18px;text-align:center;letter-spacing:5px;border:1px solid #ccc;border-radius:10px"
+      onkeydown="if(event.key==='Enter')__unlock()">
+    <div id="__pinmsg" style="font-size:12px;color:#dc2626;height:16px;margin-top:6px"></div>
+    <button onclick="__unlock()" style="width:100%;margin-top:10px;padding:13px;background:#0891b2;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800">열기</button>
+  </div>
+</div>
+<script>
+var __PIN="2711";
+(function(){ var l=document.getElementById('__lock');
+  if(localStorage.getItem('hanasm_unlock_m')==='1'){ if(l)l.style.display='none'; return; }
+  document.documentElement.style.overflow='hidden';
+  setTimeout(function(){ var p=document.getElementById('__pin'); if(p)p.focus(); },120); })();
+function __unlock(){ var v=document.getElementById('__pin').value.trim();
+  if(v===__PIN){ localStorage.setItem('hanasm_unlock_m','1'); document.getElementById('__lock').style.display='none'; document.documentElement.style.overflow=''; pull(); }
+  else{ document.getElementById('__pinmsg').textContent='PIN이 틀렸습니다'; var p=document.getElementById('__pin'); p.value=''; p.focus(); } }
+</script>
+<!-- ===== /접근 잠금 ===== -->
+
+<div class="head">
+  <h1>영업팀 데일리보드 <span style="font-weight:700;font-size:13px;opacity:.85">· 모바일</span></h1>
+  <div class="sub">현장에서 견적요청 바로 접수 → 천현정 차장 보드에 즉시 반영</div>
+  <div class="stat" id="stat">불러오는 중…</div>
+</div>
+
+<div class="tabs">
+  <button id="tabBtnIn" class="on" onclick="showTab('in')">➕ 접수</button>
+  <button id="tabBtnView" onclick="showTab('view')">📋 보드 보기</button>
+</div>
+
+<!-- ===== 접수 탭 ===== -->
+<div class="wrap" id="tabIn">
+  <div class="field">
+    <label>거래처명</label>
+    <input id="f_cust" type="text" placeholder="거래처명 (비우면 메모 첫 줄에서 자동 인식)">
+  </div>
+  <div class="field">
+    <label>담당 / 연락처</label>
+    <input id="f_owner" type="text" inputmode="tel" placeholder="담당자 또는 연락처">
+  </div>
+  <div class="field">
+    <label>요청형태</label>
+    <select id="f_form">
+      <option value="">요청형태 선택</option>
+      <option>카톡</option><option>텍스트</option><option>사진</option><option>시안</option>
+      <option>손글씨</option><option>문자</option><option>메일</option><option>혼합</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>품목 · 규격 요약 / 메모</label>
+    <textarea id="f_items" placeholder="예: 현수막 2종 - 부출입구 4450×90, 정문 5000×90 / 보수공사 출입제한"></textarea>
+  </div>
+  <button class="submit" id="subBtn" onclick="submitIntake()">+ 견적요청 접수</button>
+  <div class="msg" id="inMsg"></div>
+  <div class="formhint">
+    접수하면 <b>견적전(미처리)</b> 칸에 빨강 카드로 들어가 누락 없이 표시됩니다.<br>
+    거래처명을 비우고 메모만 적어도, 메모 첫 줄을 거래처명으로 자동 인식하고 전화번호도 잡아냅니다.
+  </div>
+</div>
+
+<!-- ===== 보기 탭 ===== -->
+<div class="wrap hidden" id="tabView">
+  <div class="vbar">
+    <button onclick="pull()">↻ 새로고침</button>
+    <label><input type="checkbox" id="showAll" onchange="renderBoard()"> 완료건 전체보기</label>
+  </div>
+  <div id="board"></div>
+  <div class="panel"><div class="ttl">📦 발주완료 · 출고정산</div><div id="osBox"><div class="empty">—</div></div></div>
+  <div class="panel"><div class="ttl">🤔 선택중 <span style="font-weight:400;font-size:12px;color:#888">· 고객 미선택</span></div><div id="selBox"><div class="empty">—</div></div></div>
+  <div class="panel"><div class="ttl">🔧 시공 일정</div><div id="installBox"><div class="empty">—</div></div></div>
+  <div class="panel"><div class="ttl">오늘 업무 / 처리 기록</div><div id="taskBox"><div class="empty">—</div></div></div>
+</div>
+
+<script>
+/* ===== Firebase (데일리보드와 동일 주소) ===== */
+var FB_BASE="https://hana2711-8db17-default-rtdb.firebaseio.com";
+var MY_ID="m"+Math.random().toString(36).slice(2,8);
+function fbU(node){ return FB_BASE.replace(/\/+$/,'')+'/'+node+'.json'; }
+
+/* ===== 공통 유틸 (데일리보드와 동일) ===== */
+function today(){ return new Date().toISOString().slice(0,10); }
+function id(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function esc(s){ return (s||'').replace(/[&<>]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m];}); }
+function daysIn(c){ var base=(c.colTs||c.ts||today()); return Math.round((new Date(today()+'T00:00:00')-new Date(base+'T00:00:00'))/86400000); }
+function setStat(t){ var s=document.getElementById('stat'); if(s)s.textContent=t; }
+
+/* ===== 탭 ===== */
+function showTab(w){
+  document.getElementById('tabIn').classList.toggle('hidden', w!=='in');
+  document.getElementById('tabView').classList.toggle('hidden', w!=='view');
+  document.getElementById('tabBtnIn').classList.toggle('on', w==='in');
+  document.getElementById('tabBtnView').classList.toggle('on', w==='view');
+  if(w==='view') pull();
+}
+
+/* ===== 접수(쓰기): 최신 board 받아 카드 1장 추가 후 되올리기 (안전 append) ===== */
+var sending=false;
+function submitIntake(){
+  if(sending) return;
+  var cust=document.getElementById('f_cust').value.trim();
+  var items=document.getElementById('f_items').value.trim();
+  var owner=document.getElementById('f_owner').value.trim();
+  var form=document.getElementById('f_form').value;
+  if(!cust && items){
+    cust=items.split('\n')[0].split('//')[0].split('[')[0].trim();
+    var ph=items.match(/01[0-9][-\s]?\d{3,4}[-\s]?\d{4}|0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}/);
+    if(!owner && ph) owner=ph[0];
+  }
+  if(!cust){ msg('거래처명을 쓰거나, 메모 맨 앞에 거래처명을 적어주세요','err'); return; }
+  var card={ id:id(), cust:cust, owner:owner, due:'', form:form, amt:'', items:items, col:0, ts:today(), colTs:today() };
+
+  sending=true; document.getElementById('subBtn').disabled=true; msg('올리는 중…','');
+  fetch(fbU('board'),{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).then(function(b){
+    if(!b || typeof b!=='object') b={data:[],tasks:[],works:[],installs:[],settle:{}};
+    if(!Array.isArray(b.data)) b.data=[];
+    b.data.unshift(card);
+    var rev=Date.now();
+    return fetch(fbU('board'),{method:'PUT',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)})
+      .then(function(r){ if(!r.ok) throw 0;
+        return fetch(fbU('meta'),{method:'PATCH',headers:{'Content-Type':'text/plain'},body:JSON.stringify({board:{rev:rev,by:MY_ID}})}); })
+      .then(function(r){ if(!r.ok) throw 0;
+        msg('✔ 접수 완료 — 천현정 차장 보드에 올라갔습니다','ok');
+        document.getElementById('f_cust').value='';
+        document.getElementById('f_owner').value='';
+        document.getElementById('f_items').value='';
+        document.getElementById('f_form').value='';
+        STATE=b; appliedRev=rev; renderAll();
+      });
+  }).catch(function(){ msg('✖ 접수 실패 — 인터넷 확인 후 다시 눌러주세요','err'); })
+    .then(function(){ sending=false; document.getElementById('subBtn').disabled=false; });
+}
+function msg(t,cls){ var m=document.getElementById('inMsg'); m.textContent=t; m.className='msg '+(cls||''); }
+
+/* ===== 보기(읽기): meta 폴링 → 변경 시에만 board GET (데이터 절약) ===== */
+var COLS=["견적전","견적작성","발송","발주서작성"];
+var FOLLOWUP_DAYS=7;
+var STATE={data:[],tasks:[],works:[],installs:[],settle:{}};
+var appliedRev=0;
+
+function pull(){
+  setStat('불러오는 중…');
+  fetch(fbU('meta'),{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).then(function(m){
+    var rev=(m&&m.board&&typeof m.board.rev==='number')?m.board.rev:0;
+    if(rev && rev<=appliedRev && STATE.data.length){ setStat('✔ 최신 '+new Date().toLocaleTimeString('ko-KR')); return; }
+    return fetch(fbU('board'),{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; }).then(function(o){
+      if(!o){ setStat('아직 올라온 데이터가 없습니다'); return; }
+      STATE={data:o.data||[],tasks:o.tasks||[],works:o.works||[],installs:o.installs||[],settle:o.settle||{}};
+      appliedRev=rev||Date.now();
+      renderAll();
+      setStat('✔ 갱신 '+new Date().toLocaleTimeString('ko-KR'));
+    });
+  }).catch(function(){ setStat('✖ 불러오기 실패 — 인터넷 확인'); });
+}
+
+function renderAll(){ renderBoard(); renderList('osBox',5); renderList('selBox',6); renderInstalls(); renderTasks(); }
+
+function renderBoard(){
+  var showAll=document.getElementById('showAll').checked, vd=today();
+  var board=document.getElementById('board'); board.innerHTML='';
+  COLS.forEach(function(name,ci){
+    var items=STATE.data.filter(function(x){return x.col===ci;});
+    if((ci===1||ci===3) && !showAll) items=items.filter(function(x){return x.colTs===vd;});
+    var subt = ci===0?'미처리 전체':ci===2?'발송 후 대기 전체':(showAll?'전체기간':(vd.slice(5).replace('-','.')+' 처리분'));
+    var col=document.createElement('div'); col.className='col c'+ci;
+    var h='<h2>'+name+' <span class="cnt">'+items.length+'</span></h2><div class="body"><div class="colsub">'+subt+'</div>';
+    if(items.length===0){ h+='<div class="empty">'+(ci===0?'비었으면 누락 없음 ✔':'—')+'</div>'; }
+    else items.forEach(function(c){
+      var fu = ci===2? daysIn(c) : -1; var isFU = fu>=FOLLOWUP_DAYS;
+      h+='<div class="card '+(isFU?'followup':'')+'">';
+      h+='<div class="cust">'+esc(c.cust)+'</div>';
+      h+='<div class="meta" style="color:#999">접수 '+(c.ts?c.ts.slice(5).replace('-','.'):'')+((ci>=1&&c.colTs)?' · 처리 '+c.colTs.slice(5).replace('-','.'):'')+'</div>';
+      if(c.qno) h+='<div class="meta" style="color:#2d6cdf;font-weight:700">견적 '+esc(c.qno)+'</div>';
+      if(c.owner) h+='<div class="meta">'+esc(c.owner)+'</div>';
+      if(c.items) h+='<div class="items">'+esc(c.items)+'</div>';
+      if(c.amt) h+='<div class="amt">'+esc(c.amt)+'</div>';
+      h+='<div>';
+      if(c.form) h+='<span class="tag">'+esc(c.form)+'</span>';
+      if(ci===2) h+='<span class="due '+(isFU?'f':'g')+'">'+(isFU?'⚑ 팔로업 D+'+fu:'발송 D+'+fu)+'</span>';
+      h+='</div></div>';
+    });
+    h+='</div>'; col.innerHTML=h; board.appendChild(col);
+  });
+}
+function renderList(boxId,colv){
+  var box=document.getElementById(boxId);
+  var items=STATE.data.filter(function(x){return x.col===colv;});
+  if(!items.length){ box.innerHTML='<div class="empty">—</div>'; return; }
+  var h='<table class="itbl"><tr><th>거래처</th><th>품목</th><th>금액</th><th>접수</th></tr>';
+  items.forEach(function(c){ h+='<tr><td>'+esc(c.cust)+'</td><td style="white-space:pre-wrap">'+esc(c.items)+'</td><td>'+esc(c.amt||'')+'</td><td>'+esc((c.ts||'').slice(5))+'</td></tr>'; });
+  h+='</table>'; box.innerHTML=h;
+}
+function renderInstalls(){
+  var box=document.getElementById('installBox');
+  var list=(STATE.installs||[]).filter(function(x){return !x.paid;});
+  if(!list.length){ box.innerHTML='<div class="empty">미지급 시공 건 없음</div>'; return; }
+  var h='<table class="itbl"><tr><th>시공일</th><th>업체</th><th>상품</th><th>시공비</th></tr>';
+  list.forEach(function(j){ h+='<tr><td>'+esc(j.date||'-')+'</td><td>'+esc(j.cust||'')+'</td><td>'+esc(j.items||'')+'</td><td>'+esc(j.fee||'')+'</td></tr>'; });
+  h+='</table>'; box.innerHTML=h;
+}
+function renderTasks(){
+  var box=document.getElementById('taskBox'); var h='';
+  var ts=(STATE.tasks||[]).slice().reverse();
+  if(ts.length){ h+='<div style="font-size:12px;color:#555;margin-bottom:4px">업무 일지</div>';
+    ts.slice(0,30).forEach(function(t){ h+='<div class="meta">'+(t.done?'✔ ':'· ')+esc(t.text||'')+(t.date?' <span style="color:#999">('+esc(t.date)+')</span>':'')+'</div>'; }); }
+  var ws=(STATE.works||[]).slice().reverse();
+  if(ws.length){ h+='<div style="font-size:12px;color:#555;margin:8px 0 4px">처리 기록</div>';
+    ws.slice(0,30).forEach(function(w){ h+='<div class="meta">'+(w.done?'✔ ':'· ')+esc(w.type||'')+' — '+esc(w.cust||'')+(w.qno?' ('+esc(w.qno)+')':'')+(w.date?' <span style="color:#999">'+esc(w.date)+'</span>':'')+'</div>'; }); }
+  box.innerHTML = h || '<div class="empty">—</div>';
+}
+
+/* 잠금 해제 상태면 즉시 로드, 30초마다 자동 갱신 */
+if(localStorage.getItem('hanasm_unlock_m')==='1') pull();
+setInterval(function(){ if(localStorage.getItem('hanasm_unlock_m')==='1') pull(); }, 30000);
+</script>
+</body>
+</html>
