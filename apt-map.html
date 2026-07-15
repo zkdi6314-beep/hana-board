@@ -46,6 +46,7 @@ select{background:#fff;color:#1d2733;}
   <select id="reg"><option>서울</option><option>경기</option><option>인천</option></select>
   <select id="gb"><option value="전체">전체</option><option value="신규">🟣신규</option><option value="거래이력(휴면)">🟠휴면</option><option value="거래중">🟢거래중</option></select>
   <button id="back">← 구 전체보기</button>
+  <button id="grab" style="background:#C77800;color:#fff">📥 좌표수집(1회)</button>
   <span id="cnt"></span>
 </div>
 <div id="prog"></div>
@@ -151,6 +152,29 @@ function loadApts(){
     });
   })();
 }
+document.getElementById('grab').onclick=function(){
+  if(!geocoder){alert('지도 로딩 후 눌러주세요');return;}
+  const todo=REC.filter(x=>!(x[4] in cache));
+  if(!todo.length){ dl(); return; }
+  let i=0;
+  (function step(){
+    if(i>=todo.length){ prog.style.display='none'; localStorage.setItem(CK,JSON.stringify(cache)); dl(); return; }
+    prog.style.display='block';
+    prog.textContent='📥 전체 좌표 수집 중… '+(i+1)+'/'+todo.length+'  (끝나면 파일이 자동 저장됩니다)';
+    const x=todo[i]; i++;
+    geocoder.addressSearch(x[4],(res,st)=>{
+      cache[x[4]]=(st===kakao.maps.services.Status.OK&&res[0])?{lat:+res[0].y,lng:+res[0].x}:null;
+      if(i%25===0) localStorage.setItem(CK,JSON.stringify(cache));
+      setTimeout(step,60);
+    });
+  })();
+  function dl(){
+    const ok=Object.values(cache).filter(v=>v&&v.lat).length;
+    const blob=new Blob([JSON.stringify(cache)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='좌표.json'; a.click();
+    alert('좌표 수집 완료!\n찾은 곳: '+ok+' / '+REC.length+'\n\n다운로드된 [좌표.json] 파일을 클로드에게 주세요.');
+  }
+};
 backBtn.onclick=loadGu;
 regSel.onchange=loadGu;
 gbSel.onchange=()=>{ curGu?loadApts():loadGu(); };
