@@ -25,7 +25,7 @@ select{background:#fff;color:#1d2733;}
 .gub:hover{background:#2c6ba8;}
 .apt{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;}
 .apt .dot{width:14px;height:14px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.5);flex:none;}
-.apt .t{background:rgba(255,255,255,.96);border:1.5px solid #9aa7b4;border-radius:6px;padding:2px 6px;font-size:12px;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.apt .t{border:2px solid #fff;border-radius:7px;padding:3px 8px;font-size:12.5px;font-weight:800;color:#fff;box-shadow:0 2px 5px rgba(0,0,0,.4);}
 .iw{padding:12px 14px;font-size:13px;line-height:1.7;min-width:190px;}
 .iw b{font-size:15px;}
 .iw .tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:20px;margin-left:4px;}
@@ -112,7 +112,7 @@ function drawApts(){
   for(const x of list){
     const c=cache[x[4]]; if(!c||!c.lat) continue;
     const el=document.createElement('div'); el.className='apt';
-    el.innerHTML='<span class="dot" style="background:'+(COL[x[0]]||'#5b3fb0')+'"></span><span class="t">'+x[3]+'</span>';
+    el.innerHTML='<span class="t" style="background:'+(COL[x[0]]||'#5b3fb0')+'">'+x[3]+'</span>';
     el.onclick=()=>{
       const ph=fmt(x[8]);
       iw.setContent('<div class="iw"><b>'+x[3]+'</b><span class="tag" style="'+TG[x[0]]+'">'+short(x[0])+'</span><br>'
