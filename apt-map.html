@@ -44,7 +44,7 @@ select{font-size:15px;padding:8px 10px;border:none;border-radius:7px;font-family
 </div>
 <div id="hint">🔍 <b>확대(줌인)</b>하면 그 동네 아파트가 자동으로 나옵니다 · 구 동그라미를 클릭해도 됩니다</div>
 <div id="map"></div>
-<div id="legend"><span class="d" style="background:#177245"></span>거래중 <span class="d" style="background:#C77800;margin-left:6px"></span>휴면 <span class="d" style="background:#5b3fb0;margin-left:6px"></span>신규 <span class="d" style="background:#0b6e8f;margin-left:6px"></span>거래중(정보없음)</div>
+<div id="legend"><span class="d" style="background:#111111"></span>거래중 <span class="d" style="background:#e11d1d;margin-left:6px"></span>휴면 <span class="d" style="background:#ffffff;border:1px solid #999;margin-left:6px"></span>신규 <span class="d" style="background:#0b6e8f;margin-left:6px"></span>거래중(정보없음)</div>
 <div id="addModal" style="position:fixed;inset:0;background:rgba(20,30,45,.5);display:none;align-items:center;justify-content:center;z-index:300">
  <div style="background:#fff;border-radius:12px;padding:20px 22px;width:94%;max-width:440px">
   <h3 style="margin:0 0 12px;color:#5b3fb0">➕ 신규 아파트 등록</h3>
@@ -80,7 +80,8 @@ let REC = BASE_REC.concat(myApts());
 const fmt=d=>{d=(d||'').replace(/\D/g,'');if(!d)return '';if(d.startsWith('02'))return d.length>=9?'02-'+d.slice(2,d.length-4)+'-'+d.slice(-4):d;if(d.length===11)return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);if(d.length===10)return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);if(d.length===8)return d.slice(0,4)+'-'+d.slice(4);return d;};
 const won=n=>Number(n||0).toLocaleString('ko-KR');
 const short=g=>g==='거래이력(휴면)'?'휴면':g;
-const COL={'거래중':'#177245','거래중(미등록)':'#0b6e8f','거래이력(휴면)':'#C77800','신규':'#5b3fb0'};
+const COL={'거래중':'#111111','거래중(미등록)':'#0b6e8f','거래이력(휴면)':'#e11d1d','신규':'#ffffff'}
+function inkOf(c){const w=String(c).toLowerCase();const light=(w==='#fff'||w==='#ffffff');return {txt:light?'#111':'#fff', brd:light?'#333':'#fff'};};
 const CENTER={'서울':[37.564,126.99],'경기':[37.40,127.05],'인천':[37.46,126.70]};
 const GU_LEVEL=8;   // 레벨 8 이상(축소)=구 / 7 이하(확대)=아파트 자동표시
 let map,iw,ovs=[],labelItems=[];
@@ -136,10 +137,10 @@ function drawApts(){
   list.forEach(x=>{
     const c=COL[x[0]]||'#5b3fb0';
     const el=document.createElement('div');el.className='apt';
-    el.innerHTML='<span class="t" style="background:'+c+'">'+x[3]+'</span>';
+    el.innerHTML='<span class="t" style="background:'+c+';color:'+inkOf(c).txt+';border-color:'+inkOf(c).brd+'">'+x[3]+'</span>';
     el.onclick=()=>{
       const ph=fmt(x[8]);
-      iw.setContent('<div class="iw"><b>'+x[3]+'</b><span class="tag" style="background:'+c+'">'+short(x[0])+'</span><br>'
+      iw.setContent('<div class="iw"><b>'+x[3]+'</b><span class="tag" style="background:'+c+';color:'+inkOf(c).txt+';border:1px solid '+inkOf(c).brd+'">'+short(x[0])+'</span><br>'
         +won(x[6])+'세대 · '+x[5]+'년 준공'+(x[7]?' · 최근거래 '+x[7]:'')+'<br>'+x[4]
         +'<br>'+(ph?'<a class="c" href="tel:'+ph+'">📞 '+ph+'</a>':'')
         +'<a class="k" target="_blank" href="https://map.kakao.com/link/search/'+encodeURIComponent(x[4])+'">🗺 길찾기</a></div>');
