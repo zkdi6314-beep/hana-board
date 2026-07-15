@@ -40,9 +40,18 @@ kakao.maps.load(function(){
     const cache=Object.assign({},OLD); let i=0,ok=0,no=0;
     (function step(){
       if(i>=NEED.length){
-        prog.textContent='✅ 완료! 새로 찾음 '+ok+'곳 / 실패 '+no+'곳 → 좌표.json 저장됨';
-        const b=new Blob([JSON.stringify(cache)],{type:'application/json'});
-        const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='좌표.json';a.click();
+        prog.textContent='✅ 완료! 새로 찾음 '+ok+'곳 / 실패 '+no+'곳';
+        const txt=JSON.stringify(cache);
+        // 1) 자동 다운로드 시도
+        try{const b=new Blob([txt],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='좌표.json';document.body.appendChild(a);a.click();a.remove();}catch(e){}
+        // 2) 화면에도 띄워서 복사 가능하게
+        const box=document.createElement('div');
+        box.innerHTML='<p style="font-size:14px;font-weight:800;color:#1F4E78;margin:18px 0 6px">다운로드가 안 되면 아래 버튼으로 복사해서 클로드에게 붙여넣으세요</p>';
+        const btn=document.createElement('button');btn.textContent='📋 전체 복사';btn.style.cssText='background:#177245;margin-bottom:8px';
+        const ta=document.createElement('textarea');ta.value=txt;ta.style.cssText='width:100%;height:120px;font-size:11px;border:1px solid #cfd6df;border-radius:7px;padding:8px';
+        btn.onclick=()=>{ta.select();document.execCommand('copy');btn.textContent='✅ 복사됨! 클로드 대화창에 붙여넣기';};
+        box.appendChild(btn);box.appendChild(ta);
+        document.querySelector('.box').appendChild(box);
         return;
       }
       const n=NEED[i]; i++;
