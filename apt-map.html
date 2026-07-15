@@ -80,7 +80,30 @@ const regSel=document.getElementById('reg'),gbSel=document.getElementById('gb'),
 let map,geocoder,iw,overlays=[],job=0,curGu='';
 const filt=()=>REC.filter(x=>x[1]===regSel.value&&(gbSel.value==='전체'||x[0]===gbSel.value));
 function guCounts(){const c={};filt().forEach(x=>c[x[2]]=(c[x[2]]||0)+1);return c;}
-function clear(){overlays.forEach(o=>o.setMap(null));overlays=[];if(iw)iw.close();}
+let labelItems=[];
+const _cv=document.createElement('canvas').getContext('2d');
+function mw(t,big){_cv.font=(big?'800 13px':'800 12.5px')+' "맑은 고딕",system-ui';return _cv.measureText(t).width+26;}
+function layoutLabels(){
+  if(!map||!labelItems.length) return;
+  const proj=map.getProjection(); const placed=[];
+  const RING=[0,30,54,80,108,140], ANG=[-90,90,0,180,-45,45,-135,135];
+  labelItems.slice().sort((a,b)=>b.w-a.w).forEach(it=>{
+    let p; try{ p=proj.containerPointFromCoords(it.ll); }catch(e){ return; }
+    const W=mw(it.text,it.big), H=it.big?28:26;
+    let sel=[0,0], ok=false;
+    for(const r of RING){
+      const cs=r===0?[[0,0]]:ANG.map(a=>[Math.round(r*Math.cos(a*Math.PI/180)),Math.round(r*Math.sin(a*Math.PI/180))]);
+      for(const c of cs){
+        const b={x1:p.x+c[0]-W/2,y1:p.y+c[1]-H/2,x2:p.x+c[0]+W/2,y2:p.y+c[1]+H/2};
+        if(!placed.some(o=>!(b.x2<o.x1-3||b.x1>o.x2+3||b.y2<o.y1-3||b.y1>o.y2+3))){sel=c;placed.push(b);ok=true;break;}
+      }
+      if(ok)break;
+    }
+    if(!ok){sel=[0,-140];placed.push({x1:p.x-W/2,y1:p.y-140-H/2,x2:p.x+W/2,y2:p.y-140+H/2});}
+    it.el.style.transform='translate('+sel[0]+'px,'+sel[1]+'px)';
+  });
+}
+function clear(){overlays.forEach(o=>o.setMap(null));overlays=[];labelItems=[];if(iw)iw.close();}
 function fit(pts){ if(!pts.length)return; const b=new kakao.maps.LatLngBounds(); pts.forEach(p=>b.extend(new kakao.maps.LatLng(p[0],p[1]))); map.setBounds(b,60,60,60,60); }
 // ── 구 개요
 function drawGu(){
@@ -93,9 +116,10 @@ function drawGu(){
     el.onclick=()=>{curGu=g;backBtn.style.display='block';hint.style.display='none';loadApts();};
     const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(p.lat,p.lng),content:el,yAnchor:0.5,clickable:true});
     ov.setMap(map); overlays.push(ov); pts.push([p.lat,p.lng]);
+    labelItems.push({el:el,ll:new kakao.maps.LatLng(p.lat,p.lng),text:g+' '+c[g],w:c[g],big:true});
   }
   cntEl.textContent=Object.keys(c).length+'개 구 · '+filt().length+'곳';
-  fit(pts);
+  fit(pts); setTimeout(layoutLabels,120);
 }
 function loadGu(){
   const my=++job; curGu=''; backBtn.style.display='none'; hint.style.display='block';
@@ -129,11 +153,12 @@ function drawApts(){
         +'<a class="k" target="_blank" href="https://map.kakao.com/link/search/'+encodeURIComponent(x[4])+'">🗺 길찾기</a></div>');
       iw.setPosition(new kakao.maps.LatLng(c.lat,c.lng)); iw.open(map);
     };
-    const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(c.lat,c.lng),content:el,yAnchor:0.5,xAnchor:0,clickable:true});
+    const ov=new kakao.maps.CustomOverlay({position:new kakao.maps.LatLng(c.lat,c.lng),content:el,yAnchor:0.5,xAnchor:0.5,clickable:true});
     ov.setMap(map); overlays.push(ov); pts.push([c.lat,c.lng]);
+    labelItems.push({el:el,ll:new kakao.maps.LatLng(c.lat,c.lng),text:x[3],w:Number(x[6])||0,big:false});
   }
   cntEl.textContent=curGu+' · '+pts.length+'/'+list.length+'곳';
-  fit(pts);
+  fit(pts); setTimeout(layoutLabels,120);
 }
 function loadApts(){
   const my=++job, list=filt().filter(x=>x[2]===curGu);
@@ -184,6 +209,7 @@ window.__boot=function(){
       map=new kakao.maps.Map(document.getElementById('map'),{center:new kakao.maps.LatLng(37.55,127.0),level:9});
       geocoder=new kakao.maps.services.Geocoder();
       iw=new kakao.maps.InfoWindow({removable:true});
+      kakao.maps.event.addListener(map,'idle',layoutLabels);
       loadGu();
     });
   }catch(e){ document.getElementById('err').style.display='flex'; }
